@@ -6,7 +6,7 @@ RUN git clone --recursive --depth 1 https://github.com/vatsalkshah/BitNet.git &&
 
 WORKDIR /BitNet
 
-RUN pip install --no-cache-dir --no-deps --trusted-host pypi.org --trusted-host files.pythonhosted.org -r requirements.txt
+RUN pip install --no-cache-dir --trusted-host pypi.org --trusted-host files.pythonhosted.org -r requirements.txt
 
 RUN python3 utils/codegen_tl2.py --model Llama3-8B-1.58-100B-tokens --BM 256,128,256,128 --BK 96,96,96,96 --bm 32,32,32,32
 

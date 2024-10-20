@@ -47,7 +47,8 @@ def run_inference(args):
 @app.post("/inference")
 async def inference(request: InferenceRequest):
     try:
-        run_inference(request)
-        return {"status": "success", "message": "Inference completed"}
+        result = run_inference(request)
+        
+        return {"status": "success", "message": "Inference completed", "result": result}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
