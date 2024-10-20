@@ -1,9 +1,19 @@
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
 import os
-import sys
-import signal
 import platform
-import argparse
 import subprocess
+import sys
+
+app = FastAPI()
+
+class InferenceRequest(BaseModel):
+    prompt: str
+    model: str = "models/bitnet_b1_58-3B/ggml-model-i2_s.gguf"
+    n_predict: int = 128
+    threads: int = 2
+    ctx_size: int = 2048
+    temperature: float = 0.8
 
 def run_command(command, shell=False):
     """Run a system command and ensure it succeeds."""
@@ -13,7 +23,7 @@ def run_command(command, shell=False):
         print(f"Error occurred while running command: {e}")
         sys.exit(1)
 
-def run_inference():
+def run_inference(args):
     build_dir = "build"
     if platform.system() == "Windows":
         main_path = os.path.join(build_dir, "bin", "Release", "llama-cli.exe")
@@ -34,20 +44,10 @@ def run_inference():
     ]
     run_command(command)
 
-def signal_handler(sig, frame):
-    print("Ctrl+C pressed, exiting...")
-    sys.exit(0)
-
-if __name__ == "__main__":
-    signal.signal(signal.SIGINT, signal_handler)
-    # Usage: python run_inference.py -p "Microsoft Corporation is an American multinational corporation and technology company headquartered in Redmond, Washington."
-    parser = argparse.ArgumentParser(description='Run inference')
-    parser.add_argument("-m", "--model", type=str, help="Path to model file", required=False, default="models/bitnet_b1_58-3B/ggml-model-i2_s.gguf")
-    parser.add_argument("-n", "--n-predict", type=int, help="Number of tokens to predict when generating text", required=False, default=128)
-    parser.add_argument("-p", "--prompt", type=str, help="Prompt to generate text from", required=True)
-    parser.add_argument("-t", "--threads", type=int, help="Number of threads to use", required=False, default=2)
-    parser.add_argument("-c", "--ctx-size", type=int, help="Size of the prompt context", required=False, default=2048)
-    parser.add_argument("-temp", "--temperature", type=float, help="Temperature, a hyperparameter that controls the randomness of the generated text", required=False, default=0.8)
-
-    args = parser.parse_args()
-    run_inference()
+@app.post("/inference")
+async def inference(request: InferenceRequest):
+    try:
+        run_inference(request)
+        return {"status": "success", "message": "Inference completed"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
